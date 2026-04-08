@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileText, Target, WandSparkles } from "lucide-react";
-import { atsFindings, sampleResumeBullets } from "@/lib/mock-data";
+import { sampleResumeBullets } from "@/lib/mock-data";
 import {
   generateResumeRewrite,
   persistResumeRewrite,
@@ -30,6 +30,7 @@ export function ResumePage() {
   const [rewriteSaveError, setRewriteSaveError] = useState("");
   const [restoreState, setRestoreState] = useState<"idle" | "restoring" | "error" | "success">("idle");
   const [restoreError, setRestoreError] = useState("");
+  const hasResumeContent = Boolean(resumeData?.extractedText?.trim());
 
   useEffect(() => {
     if (!targetRole && profileMe.data?.role) {
@@ -158,16 +159,21 @@ export function ResumePage() {
             {uploadError ? <p style={{ color: "var(--red)", margin: 0 }}>{uploadError}</p> : null}
           </div>
           <div className="pdf-preview" style={{ marginTop: 16 }}>
-            <strong>Software Engineer Intern Resume.pdf</strong>
+            <strong>{hasResumeContent ? "Uploaded resume preview" : "No resume uploaded yet"}</strong>
             <div className="feedback-list" style={{ marginTop: 16 }}>
-              {(resumeData?.extractedText
-                ? resumeData.extractedText.split(". ").filter(Boolean).map((item) => `${item.trim().replace(/\.$/, "")}.`)
-                : sampleResumeBullets
-              ).map((bullet) => (
-                <div key={bullet} className="feedback-item">
-                  {bullet}
-                </div>
-              ))}
+              {hasResumeContent ? (
+                (resumeData?.extractedText ?? "")
+                  .split(". ")
+                  .filter(Boolean)
+                  .map((item) => `${item.trim().replace(/\.$/, "")}.`)
+                  .map((bullet) => (
+                    <div key={bullet} className="feedback-item">
+                      {bullet}
+                    </div>
+                  ))
+              ) : (
+                <QueryMessage message="Upload or paste your resume to see extracted text, ATS feedback, and version history." />
+              )}
             </div>
           </div>
         </GlassCard>
@@ -184,7 +190,7 @@ export function ResumePage() {
           </div>
           <div className="feedback-list">
             {resume.isLoading ? <QueryMessage message="Scanning resume content and extracting ATS signals..." /> : null}
-            {(resumeData?.findings ?? atsFindings).map((finding) => (
+            {(resumeData?.findings ?? []).map((finding) => (
               <div key={finding.title} className="feedback-item">
                 <div className="row-between">
                   <strong>{finding.title}</strong>
@@ -195,10 +201,13 @@ export function ResumePage() {
                 </p>
               </div>
             ))}
+            {!resume.isLoading && (resumeData?.findings ?? []).length === 0 ? (
+              <QueryMessage message="No ATS feedback yet. Upload a resume to generate personalized findings." />
+            ) : null}
             <div className="feedback-item">
               <div className="row-between">
                 <strong>Suggested skills from parser</strong>
-                <span className="pill">ATS {resumeData?.atsScore ?? 63}</span>
+                <span className="pill">ATS {resumeData?.atsScore ?? 0}</span>
               </div>
               <div className="tag-row" style={{ marginTop: 10 }}>
                 {(resumeData?.suggestedSkills ?? []).map((skill) => (
@@ -211,7 +220,7 @@ export function ResumePage() {
             <div className="feedback-item">
               <div className="row-between">
                 <strong>Keyword coverage</strong>
-                <span className="pill">{resumeData?.keywordCoverage ?? 63}%</span>
+                <span className="pill">{resumeData?.keywordCoverage ?? 0}%</span>
               </div>
               <div className="tag-row" style={{ marginTop: 10 }}>
                 {(resumeData?.missingKeywords ?? []).map((keyword) => (
@@ -233,7 +242,7 @@ export function ResumePage() {
               </div>
               <p className="section-copy" style={{ marginTop: 8 }}>
                 Previous score: {resumeData?.comparison.previousAtsScore ?? "n/a"} | Current score:{" "}
-                {resumeData?.comparison.currentAtsScore ?? resumeData?.atsScore ?? 63}
+                {resumeData?.comparison.currentAtsScore ?? resumeData?.atsScore ?? 0}
               </p>
             </div>
           </div>
@@ -367,7 +376,7 @@ export function ResumePage() {
                     <div className="feedback-list" style={{ marginTop: 10 }}>
                       {(resumeData?.extractedText
                         ? resumeData.extractedText.split(". ").filter(Boolean).slice(0, rewriteResult.improvedBullets.length)
-                        : sampleResumeBullets
+                        : sampleResumeBullets.slice(0, rewriteResult.improvedBullets.length)
                       ).map((bullet, index) => (
                         <div key={`current-${bullet}`} className="feedback-item">
                           {bullet.trim().replace(/\.$/, "")}.

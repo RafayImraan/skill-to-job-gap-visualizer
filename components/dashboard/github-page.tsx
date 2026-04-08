@@ -93,19 +93,19 @@ export function GithubPage() {
           <span className="pill">Deploy + docs + CI</span>
         </div>
         <GithubRadar
-          docs={githubData?.readmeScore ?? 78}
-          ci={githubData?.ciCoverage ?? 44}
+          docs={githubData?.readmeScore ?? 0}
+          ci={githubData?.ciCoverage ?? 0}
           structure={
-            repos.length > 0 ? Math.round(repos.reduce((sum, repo) => sum + repo.structure, 0) / repos.length) : 74
+            repos.length > 0 ? Math.round(repos.reduce((sum, repo) => sum + repo.structure, 0) / repos.length) : 0
           }
-          deployment={githubData?.deploymentCoverage ?? 67}
+          deployment={githubData?.deploymentCoverage ?? 0}
         />
       </GlassCard>
 
       <GlassCard>
         {github.isError ? <QueryMessage message="GitHub analysis is temporarily unavailable." /> : null}
         {!githubData?.connected ? (
-          <QueryMessage message="Live GitHub insights are using fallback data. Add a valid GitHub username in your profile and keep the server token configured." />
+          <QueryMessage message="GitHub is not connected yet. Add your GitHub username in Profile to unlock repository analysis." />
         ) : null}
         <div className="table-like">
           {(repos.length > 0
@@ -132,10 +132,10 @@ export function GithubPage() {
         </div>
         <div className="tag-row" style={{ marginTop: 16 }}>
           <span className="pill">User: {githubData?.username ?? "not linked"}</span>
-          <span className="pill">Commits: {githubData?.commitCount ?? 246}</span>
-          <span className="pill">Stars: {githubData?.stars ?? 29}</span>
-          <span className="pill">README score: {githubData?.readmeScore ?? 78}</span>
-          <span className="pill">Deployment: {githubData?.deploymentCoverage ?? 67}%</span>
+          <span className="pill">Commits: {githubData?.commitCount ?? 0}</span>
+          <span className="pill">Stars: {githubData?.stars ?? 0}</span>
+          <span className="pill">README score: {githubData?.readmeScore ?? 0}</span>
+          <span className="pill">Deployment: {githubData?.deploymentCoverage ?? 0}%</span>
         </div>
       </GlassCard>
     </>

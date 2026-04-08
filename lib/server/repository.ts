@@ -63,6 +63,48 @@ function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
+function createEmptyGithubAnalysis(username: string | null = null): GithubAnalysisResponse {
+  return {
+    username,
+    commitCount: 0,
+    languages: [],
+    stars: 0,
+    readmeScore: 0,
+    deploymentCoverage: 0,
+    ciCoverage: 0,
+    repos: [],
+    heatmap: Array.from({ length: 72 }, () => 0),
+    connected: false,
+  };
+}
+
+function createEmptyResumeUpload(): ResumeUploadResponse {
+  return {
+    extractedText: "",
+    suggestedSkills: [],
+    atsScore: 0,
+    findings: [],
+    keywordCoverage: 0,
+    missingKeywords: [],
+    weakPhrases: [],
+    history: [],
+    comparison: {
+      previousAtsScore: null,
+      currentAtsScore: 0,
+      delta: 0,
+    },
+  };
+}
+
+function createEmptyProjectAnalysis(): ProjectAnalysisResponse {
+  return {
+    overallScore: 0,
+    strongestSignal: "No projects added yet. Add your first project to begin recruiter-facing analysis.",
+    nextUpgrade: "Add one real project with a repo link, description, and live URL if available.",
+    projects: [],
+  };
+}
+
 function buildTrend(finalValue: number) {
   const anchors = [0.42, 0.5, 0.56, 0.64, 0.72, 0.8, 0.9, 1];
   return anchors.map((anchor) => clamp(finalValue * anchor));
@@ -289,6 +331,8 @@ export async function getDashboardOverview(userId?: string): Promise<DashboardOv
   const roadmapProgress = typedUser.roadmap.length ? Math.round((completedMilestones / typedUser.roadmap.length) * 100) : 0;
   const projects = typedUser.projects;
   const deployedProjects = projects.filter((project) => Boolean(project.liveUrl)).length;
+  const hasProjects = projects.length > 0;
+  const hasResume = Boolean(user.resumeText?.trim());
   const projectScore = projects.length
     ? clamp(
         projects.reduce(
@@ -297,26 +341,36 @@ export async function getDashboardOverview(userId?: string): Promise<DashboardOv
         ) / projects.length,
       )
     : 28;
-  const resumeAnalysis = user.resumeText ? analyzeResumeText(user.resumeText) : seededResumeUpload;
+  const resumeAnalysis = hasResume ? analyzeResumeText(user.resumeText!) : createEmptyResumeUpload();
   const githubAnalysis = await getGithubAnalysis(null, userId);
   const skillGap = await getSkillGap(userId);
+  const hasGithub = githubAnalysis.connected && githubAnalysis.repos.length > 0;
   const marketMatch = clamp((projectScore * 0.26) + (resumeAnalysis.atsScore * 0.34) + (githubAnalysis.readmeScore * 0.2) + (deployedProjects * 8));
-  const githubStrength = clamp((githubAnalysis.readmeScore * 0.32) + (githubAnalysis.ciCoverage * 0.2) + (githubAnalysis.deploymentCoverage * 0.18) + Math.min(githubAnalysis.commitCount, 25));
-  const atsAlignment = clamp((resumeAnalysis.atsScore * 0.78) + (100 - resumeAnalysis.missingKeywords.length * 6) * 0.22);
-  const interviewConfidence = clamp((projectScore * 0.34) + (atsAlignment * 0.22) + (roadmapProgress * 0.18) + 18);
+  const githubStrength = hasGithub
+    ? clamp((githubAnalysis.readmeScore * 0.32) + (githubAnalysis.ciCoverage * 0.2) + (githubAnalysis.deploymentCoverage * 0.18) + Math.min(githubAnalysis.commitCount, 25))
+    : 0;
+  const atsAlignment = hasResume
+    ? clamp((resumeAnalysis.atsScore * 0.78) + (100 - resumeAnalysis.missingKeywords.length * 6) * 0.22)
+    : 0;
+  const interviewConfidence = clamp((projectScore * 0.34) + (atsAlignment * 0.22) + (roadmapProgress * 0.18) + (hasProjects ? 18 : 0));
   const jobReadiness = clamp((projectScore * 0.3) + (atsAlignment * 0.25) + (githubStrength * 0.2) + (roadmapProgress * 0.25));
   const salaryLow = 48 + Math.round(jobReadiness / 4);
   const salaryHigh = salaryLow + 20 + Math.round(githubStrength / 10);
   const priorityActions = [
-    skillGap.missingSkills[0] ? `Learn ${skillGap.missingSkills[0]} and ship one proof-of-work example` : null,
-    skillGap.weakProjects[0] ? `Strengthen ${skillGap.weakProjects[0]}` : null,
-    resumeAnalysis.missingKeywords[0] ? `Add ${resumeAnalysis.missingKeywords.slice(0, 3).join(", ")} to your resume and project docs` : null,
+    !hasResume ? "Upload your resume to unlock ATS scoring and rewrite guidance" : null,
+    !hasProjects ? "Add your first project with a repo or live link to unlock recruiter scoring" : null,
+    !hasGithub ? "Add your GitHub username in Profile to unlock repository intelligence" : null,
+    hasProjects && skillGap.weakProjects[0] ? `Strengthen ${skillGap.weakProjects[0]}` : null,
+    hasResume && resumeAnalysis.missingKeywords[0] ? `Add ${resumeAnalysis.missingKeywords.slice(0, 3).join(", ")} to your resume and project docs` : null,
   ].filter(Boolean) as string[];
 
   return {
     role: user.name,
-    target: user.role ?? seededDashboardOverview.target,
-    focus: `${roleFitText(user.role)} track with ${skillGap.missingSkills.slice(0, 2).join(" + ") || "portfolio polish"} as the next unlock path.`,
+    target: user.role ?? "Set your target role in Profile",
+    focus:
+      !hasResume && !hasProjects && !hasGithub
+        ? "Complete your profile, upload a resume, and add your first project to generate personalized guidance."
+        : `${roleFitText(user.role)} track with ${skillGap.missingSkills.slice(0, 2).join(" + ") || "portfolio polish"} as the next unlock path.`,
     streak: seededDashboardOverview.streak,
     roadmapProgress,
     priorityActions: priorityActions.length > 0 ? priorityActions : seededDashboardOverview.priorityActions,
@@ -425,21 +479,13 @@ export async function getGithubAnalysis(username: string | null, userId?: string
   }
 
   if (!resolvedUsername) {
-    return {
-      ...seededGithubAnalysis,
-      username: null,
-      connected: false,
-    };
+    return createEmptyGithubAnalysis(null);
   }
 
   try {
     return await fetchGithubAnalysis(resolvedUsername);
   } catch {
-    return {
-      ...seededGithubAnalysis,
-      username: resolvedUsername,
-      connected: false,
-    };
+    return createEmptyGithubAnalysis(resolvedUsername);
   }
 }
 
@@ -488,7 +534,7 @@ export async function getResumeUploadForUser(userId?: string): Promise<ResumeUpl
   });
 
   if (!user?.resumeText) {
-    return seededResumeUpload;
+    return createEmptyResumeUpload();
   }
 
   const analysis = analyzeResumeText(user.resumeText);
@@ -761,7 +807,7 @@ export async function getProjectAnalysis(userId?: string): Promise<ProjectAnalys
   });
 
   if (!user || user.projects.length === 0) {
-    return seededProjectAnalysis;
+    return createEmptyProjectAnalysis();
   }
 
   const githubAnalysis = await getGithubAnalysis(null, userId);
