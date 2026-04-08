@@ -55,11 +55,12 @@ export async function createUserSession(userId: string, email: string) {
   const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
   const token = encode({ userId, email, exp: expiresAt });
   const cookieStore = await cookies();
+  const secure = process.env.NODE_ENV === "production";
 
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure,
     path: "/",
     expires: new Date(expiresAt),
   });
@@ -67,10 +68,11 @@ export async function createUserSession(userId: string, email: string) {
 
 export async function destroyUserSession() {
   const cookieStore = await cookies();
+  const secure = process.env.NODE_ENV === "production";
   cookieStore.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure,
     path: "/",
     expires: new Date(0),
   });

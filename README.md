@@ -35,6 +35,27 @@ If you want resume rewrites and interview-style text generation without paying f
 
 If Ollama is not running, the app automatically falls back to local heuristic rewriting instead of failing hard.
 
+## Deploying on Vercel
+
+The app is ready to deploy on Vercel, but you should use a hosted PostgreSQL database for production. Your local `localhost` database will not work on Vercel.
+
+Recommended production setup:
+
+1. Push the repo to GitHub
+2. Import the repo into Vercel
+3. Add production environment variables:
+   - `DATABASE_URL`
+   - `NEXT_PUBLIC_APP_URL`
+   - `AUTH_SECRET`
+   - `GITHUB_TOKEN` (optional)
+4. Redeploy after adding or changing environment variables
+
+Notes:
+
+- `postinstall` runs `prisma generate`, so Prisma Client is generated automatically during Vercel installs
+- Ollama is local-only, so on Vercel the app will fall back to the built-in heuristic rewrite path unless you later add a hosted AI provider
+- For `NEXT_PUBLIC_APP_URL`, use your deployed Vercel URL or custom domain
+
 ## Planned next steps
 
 - connect Supabase auth and persistent user sessions
