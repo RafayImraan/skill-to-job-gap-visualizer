@@ -81,11 +81,19 @@ export function analyzeResumeText(text: string): ResumeUploadResponse {
 
 export async function extractResumeText(fileBuffer: Buffer, mimeType: string, fileName: string) {
   if (mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf")) {
-    const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: fileBuffer });
-    const result = await parser.getText();
-    await parser.destroy();
-    return normalizeWhitespace(result.text);
+    try {
+      const { PDFParse } = await import("pdf-parse");
+      const parser = new PDFParse({ data: fileBuffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      return normalizeWhitespace(result.text);
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? `PDF parsing failed: ${error.message}`
+          : "PDF parsing failed. Please paste your resume text or upload a .txt file.",
+      );
+    }
   }
 
   return normalizeWhitespace(fileBuffer.toString("utf8"));
