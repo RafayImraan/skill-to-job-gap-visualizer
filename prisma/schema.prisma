@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SkillCategory {
+  FRONTEND
+  BACKEND
+  AI
+  CLOUD
+  DEVOPS
+  TESTING
+  DSA
+  PRODUCT
+}
+
+model User {
+  id             String              @id @default(uuid())
+  name           String
+  email          String              @unique
+  passwordHash   String?
+  role           String?
+  resumeText     String?
+  linkedinUrl    String?
+  githubUsername String?
+  skills         UserSkill[]
+  projects       Project[]
+  roadmap        RoadmapMilestone[]
+  resumeVersions ResumeSnapshot[]
+}
+
+model Skill {
+  id           String            @id @default(uuid())
+  name         String            @unique
+  category     SkillCategory
+  description  String?
+  users        UserSkill[]
+  dependencies SkillDependency[] @relation("SkillDependencySource")
+  requiredBy   SkillDependency[] @relation("SkillDependencyTarget")
+}
+
+model UserSkill {
+  userId           String
+  skillId          String
+  proficiencyLevel Int
+  obtainedDate     DateTime?
+  user             User   @relation(fields: [userId], references: [id])
+  skill            Skill  @relation(fields: [skillId], references: [id])
+
+  @@id([userId, skillId])
+}
+
+model SkillDependency {
+  skillId          String
+  dependsOnSkillId String
+  skill            Skill  @relation("SkillDependencySource", fields: [skillId], references: [id])
+  dependsOn        Skill  @relation("SkillDependencyTarget", fields: [dependsOnSkillId], references: [id])
+
+  @@id([skillId, dependsOnSkillId])
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  userId          String
+  title           String
+  description     String?
+  complexityLevel Int
+  repoUrl         String?
+  liveUrl         String?
+  readmeScore     Int      @default(0)
+  completionDate  DateTime?
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model RoadmapMilestone {
+  id          String   @id @default(uuid())
+  userId      String
+  dayNumber   Int
+  title       String
+  description String
+  isUnlocked  Boolean  @default(false)
+  isCompleted Boolean  @default(false)
+  xpReward    Int
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model JobRole {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  keywords          String[]
+  marketDemandScore Int
+}
+
+model ResumeSnapshot {
+  id              String   @id @default(uuid())
+  userId          String
+  sourceLabel     String?
+  resumeText      String
+  atsScore        Int
+  keywordCoverage Int
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+}
