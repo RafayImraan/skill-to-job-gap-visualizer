@@ -50,7 +50,9 @@ async function sendJson<T>(url: string, method: string, body?: unknown): Promise
       if (json.error) {
         message = json.error;
       }
-    } catch {}
+    } catch {
+      console.error("Failed to parse error response from", url);
+    }
 
     throw new Error(message);
   }
@@ -65,20 +67,23 @@ export function useDashboardOverview() {
   });
 }
 
-export function useSkillGaps(userId = "demo-user") {
+export function useSkillGaps() {
   return useQuery({
-    queryKey: ["skill-gaps", userId],
-    queryFn: () => fetchJson<SkillGapResponse>(`/api/skills/gaps?userId=${encodeURIComponent(userId)}`),
+    queryKey: ["skill-gaps"],
+    queryFn: () => fetchJson<SkillGapResponse>("/api/skills/gaps"),
   });
 }
 
-export function useGithubAnalysis(username?: string) {
+export function useGithubAnalysis(username?: string | null) {
   return useQuery({
     queryKey: ["github-analysis", username],
-    queryFn: () =>
-      fetchJson<GithubAnalysisResponse>(
-        username ? `/api/github/analyze?username=${encodeURIComponent(username)}` : "/api/github/analyze",
-      ),
+    queryFn: () => {
+      if (!username) {
+        throw new Error("GitHub username is required");
+      }
+      return fetchJson<GithubAnalysisResponse>(`/api/github/analyze?username=${encodeURIComponent(username)}`);
+    },
+    enabled: Boolean(username),
   });
 }
 
@@ -196,7 +201,9 @@ export async function uploadResume(input: { file?: File; text?: string }) {
       if (json.error) {
         message = json.error;
       }
-    } catch {}
+    } catch {
+      console.error("Failed to parse upload error response");
+    }
 
     throw new Error(message);
   }

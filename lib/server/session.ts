@@ -14,6 +14,20 @@ function sign(value: string) {
   return createHmac("sha256", serverEnv.authSecret).update(value).digest("hex");
 }
 
+function shouldUseSecureCookie() {
+  if (process.env.NODE_ENV !== "production") {
+    return false;
+  }
+
+  const appUrl = serverEnv.appUrl?.toLowerCase();
+
+  if (!appUrl) {
+    return true;
+  }
+
+  return !(appUrl.startsWith("http://localhost") || appUrl.startsWith("http://127.0.0.1"));
+}
+
 function encode(payload: SessionPayload) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;
@@ -41,7 +55,7 @@ function decode(token: string | undefined): SessionPayload | null {
   try {
     const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
 
-    if (!payload.userId || payload.exp < Date.now()) {
+    if (!payload.userId || payload.exp <= Date.now()) {
       return null;
     }
 
@@ -55,7 +69,7 @@ export async function createUserSession(userId: string, email: string) {
   const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
   const token = encode({ userId, email, exp: expiresAt });
   const cookieStore = await cookies();
-  const secure = process.env.NODE_ENV === "production";
+  const secure = shouldUseSecureCookie();
 
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -68,7 +82,7 @@ export async function createUserSession(userId: string, email: string) {
 
 export async function destroyUserSession() {
   const cookieStore = await cookies();
-  const secure = process.env.NODE_ENV === "production";
+  const secure = shouldUseSecureCookie();
   cookieStore.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",

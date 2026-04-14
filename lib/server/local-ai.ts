@@ -32,6 +32,7 @@ export async function generateOllamaJson<T>(prompt: string): Promise<T | null> {
     });
 
     if (!response.ok) {
+      console.error(`Ollama request failed with status ${response.status}`);
       return null;
     }
 
@@ -39,11 +40,13 @@ export async function generateOllamaJson<T>(prompt: string): Promise<T | null> {
     const raw = payload.response?.trim();
 
     if (!raw) {
+      console.error("Ollama returned empty response");
       return null;
     }
 
     return JSON.parse(extractJsonBlock(raw)) as T;
-  } catch {
+  } catch (error) {
+    console.error("Ollama request failed:", error);
     return null;
   }
 }

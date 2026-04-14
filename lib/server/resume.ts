@@ -7,6 +7,30 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+async function ensurePdfRuntimeGlobals() {
+  if (
+    typeof globalThis.DOMMatrix !== "undefined" &&
+    typeof globalThis.ImageData !== "undefined" &&
+    typeof globalThis.Path2D !== "undefined"
+  ) {
+    return;
+  }
+
+  const canvas = await import("@napi-rs/canvas");
+
+  if (typeof globalThis.DOMMatrix === "undefined") {
+    globalThis.DOMMatrix = canvas.DOMMatrix as typeof globalThis.DOMMatrix;
+  }
+
+  if (typeof globalThis.ImageData === "undefined") {
+    globalThis.ImageData = canvas.ImageData as typeof globalThis.ImageData;
+  }
+
+  if (typeof globalThis.Path2D === "undefined") {
+    globalThis.Path2D = canvas.Path2D as typeof globalThis.Path2D;
+  }
+}
+
 function detectWeakPhrases(text: string) {
   const lower = text.toLowerCase();
   return WEAK_PHRASES.filter((phrase) => lower.includes(phrase));
@@ -82,11 +106,29 @@ export function analyzeResumeText(text: string): ResumeUploadResponse {
 export async function extractResumeText(fileBuffer: Buffer, mimeType: string, fileName: string) {
   if (mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf")) {
     try {
-      const { PDFParse } = await import("pdf-parse");
-      const parser = new PDFParse({ data: fileBuffer });
-      const result = await parser.getText();
-      await parser.destroy();
-      return normalizeWhitespace(result.text);
+      await ensurePdfRuntimeGlobals();
+      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const loadingTask = pdfjs.getDocument({
+        data: new Uint8Array(fileBuffer),
+        disableWorker: true,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+      } as Parameters<typeof pdfjs.getDocument>[0]);
+      const document = await loadingTask.promise;
+      let text = "";
+
+      for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+        const page = await document.getPage(pageNumber);
+        const content = await page.getTextContent();
+        text +=
+          content.items
+            .map((item) => ("str" in item ? item.str : ""))
+            .join(" ") + "\n";
+        page.cleanup();
+      }
+
+      await document.destroy();
+      return normalizeWhitespace(text);
     } catch (error) {
       throw new Error(
         error instanceof Error

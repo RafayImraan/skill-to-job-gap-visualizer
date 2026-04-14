@@ -36,7 +36,8 @@ export function ResumePage() {
     if (!targetRole && profileMe.data?.role) {
       setTargetRole(profileMe.data.role);
     }
-  }, [profileMe.data?.role, targetRole]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileMe.data?.role]);
 
   async function handleResumeUpload() {
     try {

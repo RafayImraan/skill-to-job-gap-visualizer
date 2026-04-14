@@ -13,7 +13,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const auth = useAuthSession();
 
   async function handleLogout() {
-    await logout();
+    try {
+      await logout();
+    } catch {
+      // Continue with logout regardless
+    }
     router.push("/auth/sign-in");
     router.refresh();
   }
@@ -35,10 +39,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <h2 className="sidebar-title">Skill-to-Job Gap Visualizer</h2>
             <p className="section-copy">A flagship dashboard that explains exactly why shortlists are slipping.</p>
             <div className="tag-row" style={{ marginTop: 16 }}>
-              <span className="pill">{auth.data?.user?.name ?? "Signed in"}</span>
-              <button className="button-secondary" onClick={handleLogout} style={{ padding: "10px 16px" }}>
-                Log out
-              </button>
+              <span className="pill">{auth.data?.authenticated ? auth.data?.user?.name ?? "Signed in" : "Sign in to continue"}</span>
+              {auth.data?.authenticated && (
+                <button className="button-secondary" onClick={handleLogout} style={{ padding: "10px 16px" }}>
+                  Log out
+                </button>
+              )}
             </div>
           </div>
 

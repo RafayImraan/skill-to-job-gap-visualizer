@@ -299,7 +299,7 @@ export async function createUser(input: AuthCredentialsInput) {
 
   return prisma.user.create({
     data: {
-      name: input.name ?? input.email.split("@")[0] ?? "New User",
+      name: input.name ?? (input.email.includes("@") ? input.email.split("@")[0] : "New User"),
       email: input.email,
       passwordHash: await hashPassword(input.password),
       role: "Student",

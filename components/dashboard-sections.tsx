@@ -17,6 +17,7 @@ import {
   Trophy,
   WandSparkles,
 } from "lucide-react";
+import { HeroSkillGraph } from "@/components/hero-skill-graph";
 import {
   atsFindings,
   brandStory,
@@ -74,11 +75,6 @@ const KpiSparkline = dynamic(() => import("@/components/data-charts").then((mod)
 const MarketBarChart = dynamic(() => import("@/components/data-charts").then((mod) => mod.MarketBarChart), {
   ssr: false,
   loading: () => <div className="surface panel" style={{ minHeight: 220 }} />,
-});
-
-const HeroSkillGraph = dynamic(() => import("@/components/hero-skill-graph").then((mod) => mod.HeroSkillGraph), {
-  ssr: false,
-  loading: () => <div className="surface panel" style={{ minHeight: 320, marginTop: 16 }} />,
 });
 
 function GlassCard({

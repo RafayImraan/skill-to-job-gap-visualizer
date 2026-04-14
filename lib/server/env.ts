@@ -7,6 +7,17 @@ const emptyToUndefined = (value: string | undefined) => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+function getAuthSecret() {
+  const secret = emptyToUndefined(process.env.AUTH_SECRET);
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET environment variable is required in production");
+    }
+    return "dev-only-auth-secret-do-not-use-in-production";
+  }
+  return secret;
+}
+
 export const serverEnv = {
   databaseUrl: emptyToUndefined(process.env.DATABASE_URL),
   appUrl: emptyToUndefined(process.env.NEXT_PUBLIC_APP_URL),
@@ -17,7 +28,7 @@ export const serverEnv = {
   ollamaBaseUrl: emptyToUndefined(process.env.OLLAMA_BASE_URL) ?? "http://127.0.0.1:11434",
   ollamaModel: emptyToUndefined(process.env.OLLAMA_MODEL) ?? "qwen2.5:7b-instruct",
   githubToken: emptyToUndefined(process.env.GITHUB_TOKEN),
-  authSecret: emptyToUndefined(process.env.AUTH_SECRET) ?? "dev-only-auth-secret-change-me",
+  authSecret: getAuthSecret(),
 };
 
 export function hasDatabaseUrl() {

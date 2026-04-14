@@ -1,29 +1,36 @@
 import { NextResponse } from "next/server";
 import { getSessionSummary } from "@/lib/server/auth";
+import { enforceRateLimit, getRequestClientId, getRetryAfterSeconds, optionalTrimmedString, validateEmail, validatePassword } from "@/lib/server/request";
 import { createUser } from "@/lib/server/repository";
 import { createUserSession } from "@/lib/server/session";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { name?: string; email?: string; password?: string };
-
-  if (!body.email || !body.password) {
-    return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
-  }
-
   try {
+    enforceRateLimit(`auth-register:${getRequestClientId(request)}`, 5, 1000 * 60 * 15);
+
+    const body = (await request.json().catch(() => ({}))) as { name?: string; email?: string; password?: string };
+    const email = validateEmail(body.email);
+    const password = validatePassword(body.password);
+    const name = optionalTrimmedString(body.name, "Name", 120);
+
     const user = await createUser({
-      name: body.name,
-      email: body.email,
-      password: body.password,
+      name,
+      email,
+      password,
     });
 
     await createUserSession(user.id, user.email);
 
     return NextResponse.json(await getSessionSummary(), { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create account." },
-      { status: 400 },
-    );
+    const retryAfter = getRetryAfterSeconds(error);
+    if (retryAfter) {
+      return NextResponse.json({ error: "Too many registration attempts. Try again later." }, { status: 429, headers: { "Retry-After": String(retryAfter) } });
+    }
+
+    const errorMessage = error instanceof Error ? error.message : "Unable to create account.";
+    const statusCode = errorMessage.includes("already exists") ? 409 : 400;
+
+    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }

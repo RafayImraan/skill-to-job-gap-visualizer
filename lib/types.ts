@@ -230,9 +230,9 @@ export type AuthCredentialsInput = {
 };
 
 export type ProfileUpdateInput = {
-  name: string;
-  role: string;
-  linkedinUrl: string;
-  githubUsername: string;
-  resumeText: string;
+  name?: string;
+  role?: string;
+  linkedinUrl?: string;
+  githubUsername?: string;
+  resumeText?: string;
 };
