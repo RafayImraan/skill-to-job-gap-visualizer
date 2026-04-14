@@ -1,65 +1,251 @@
-# Skill-to-Job Gap Visualizer
+# 🚀 Skill-to-Job Gap Visualizer
 
-This repository contains the first implementation pass of the PDF spec:
+> **An AI-powered platform that maps a user’s current skills against real job market requirements, identifies missing competencies, and generates a personalized roadmap to bridge the gap.**
 
-- Next.js 15 + TypeScript app-router foundation
-- premium dark glassmorphism design system
-- landing hero, dashboard, gap analysis, GitHub intelligence, resume ATS, roadmap, market trends, projects, interview prep, profile, and settings routes
-- API routes now flow through a typed server repository layer
-- Prisma schema scaffold aligned to the described data model
-- seed-backed fallback mode so the app still runs before Supabase/Postgres is connected
+Designed for **students, job seekers, career switchers, universities, and hiring teams**, this project transforms scattered resume data and job descriptions into a **clear, visual, actionable growth plan**.
 
-## Environment
+---
 
-Copy `.env.example` to `.env.local` when you are ready to connect services.
+## ✨ Why this project matters
 
-- `DATABASE_URL`: enables Prisma-backed repository reads
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`: prepare Supabase auth/client wiring
-- `SUPABASE_SERVICE_ROLE_KEY`: reserved for privileged server workflows
-- `OLLAMA_BASE_URL` and `OLLAMA_MODEL`: enable free local resume intelligence via Ollama
-- `OPENAI_API_KEY` and `GITHUB_TOKEN`: optional legacy/provider envs for external integrations
+Most people know *what job they want* but not:
 
-Without env configuration, the app runs in seeded mode and surfaces that state in the dashboard/settings UI.
+* which exact skills they are missing
+* how large the gap is
+* what to learn first
+* how long it may take
+* which projects can prove competency
 
-## Local AI With Ollama
+This platform solves that by combining:
 
-If you want resume rewrites and interview-style text generation without paying for an API, use Ollama locally:
+* **AI/NLP skill extraction**
+* **resume parsing**
+* **job description analysis**
+* **interactive skill-gap dashboards**
+* **learning roadmap recommendations**
+* **career progress forecasting**
 
-1. Install Ollama
-2. Pull a model such as:
-   `ollama pull qwen2.5:7b-instruct`
-3. Keep Ollama running locally
-4. Set:
-   - `OLLAMA_BASE_URL="http://127.0.0.1:11434"`
-   - `OLLAMA_MODEL="qwen2.5:7b-instruct"`
+---
 
-If Ollama is not running, the app automatically falls back to local heuristic rewriting instead of failing hard.
+## 🎯 Core Features
 
-## Deploying on Vercel
+### 📄 Resume & Profile Analysis
 
-The app is ready to deploy on Vercel, but you should use a hosted PostgreSQL database for production. Your local `localhost` database will not work on Vercel.
+* Upload resume (PDF / DOCX)
+* Extract technical + soft skills automatically
+* Parse experience, projects, and certifications
+* Build a structured candidate skill graph
 
-Recommended production setup:
+### 💼 Job Role Benchmarking
 
-1. Push the repo to GitHub
-2. Import the repo into Vercel
-3. Add production environment variables:
-   - `DATABASE_URL`
-   - `NEXT_PUBLIC_APP_URL`
-   - `AUTH_SECRET`
-   - `GITHUB_TOKEN` (optional)
-4. Redeploy after adding or changing environment variables
+* Compare profile against:
 
-Notes:
+  * Software Engineer
+  * AI/ML Engineer
+  * Data Analyst
+  * Product Manager
+  * Custom uploaded JD
+* Match against real market requirements
+* Detect missing technologies, tools, and experience levels
 
-- `postinstall` runs `prisma generate`, so Prisma Client is generated automatically during Vercel installs
-- Ollama is local-only, so on Vercel the app will fall back to the built-in heuristic rewrite path unless you later add a hosted AI provider
-- For `NEXT_PUBLIC_APP_URL`, use your deployed Vercel URL or custom domain
+### 📊 Visual Skill Gap Dashboard
 
-## Planned next steps
+* Radar charts for skill coverage
+* Heatmaps of missing competencies
+* Progress bars by domain
+* Seniority readiness score
+* Recruiter-fit confidence score
 
-- connect Supabase auth and persistent user sessions
-- add migrations and a real seed flow for Prisma/Supabase
-- replace seed-backed repository responses with live database and service integrations
-- add richer animations and true 3D graph rendering
-- add tests, lint config polish, and deployment wiring
+### 🧠 AI Career Roadmap Engine
+
+* Prioritized learning sequence
+* Suggested courses/resources
+* Recommended projects to build
+* Estimated completion timeline
+* Interview readiness checklist
+
+### 📈 Progress Tracking
+
+* Weekly skill completion
+* Project milestone tracking
+* Resume improvement score
+* Job readiness trend line
+
+---
+
+## 🖼️ Product Preview
+
+> Add screenshots / GIFs here for maximum star conversion
+
+```md
+![Dashboard Preview](./assets/dashboard-preview.png)
+![Gap Heatmap](./assets/heatmap.png)
+![Roadmap Flow](./assets/roadmap.gif)
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* **Next.js / React**
+* **TypeScript**
+* **Tailwind CSS**
+* **Framer Motion**
+* **Recharts / D3.js**
+
+### Backend
+
+* **Node.js / Express**
+* **Python FastAPI microservice**
+* **MongoDB / PostgreSQL**
+
+### AI / Data Layer
+
+* **spaCy / Transformers** for skill extraction
+* **Sentence embeddings** for JD similarity
+* **Scikit-learn** for role matching
+* **Pandas** for analytics
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# Clone repo
+git clone https://github.com/RafayImraan/skill-to-job-gap-visualizer.git
+
+# Install frontend
+cd frontend
+npm install
+npm run dev
+
+# Start backend
+cd backend
+npm install
+npm run dev
+
+# Start AI service
+cd ai-service
+pip install -r requirements.txt
+uvicorn app:app --reload
+```
+
+Open:
+
+```bash
+http://localhost:3000
+```
+
+---
+
+## 🧩 Example Use Cases
+
+### 🎓 Students
+
+Find what’s missing for:
+
+* internships
+* graduate roles
+* FAANG prep
+* AI/ML research roles
+
+### 💼 Career Switchers
+
+Move from:
+
+* frontend → full stack
+* SWE → AI engineer
+* analyst → data scientist
+
+### 🏫 Universities
+
+Help students visualize employability outcomes.
+
+### 🏢 HR / L&D Teams
+
+Identify internal workforce upskilling gaps.
+
+---
+
+## 📂 Project Structure
+
+```bash
+skill-to-job-gap-visualizer/
+│
+├── frontend/           # React / Next.js app
+├── backend/            # APIs + auth + persistence
+├── ai-service/         # NLP + matching engine
+├── datasets/          # role skill benchmarks
+├── assets/            # screenshots / GIFs
+└── docs/              # architecture + workflows
+```
+
+---
+
+## 🧠 Future Roadmap
+
+* [ ] LinkedIn profile import
+* [ ] Live job scraping from portals
+* [ ] ATS resume optimization
+* [ ] AI mock interview simulation
+* [ ] GitHub repo analysis for proof-of-skill
+* [ ] Team hiring dashboards
+* [ ] University placement analytics
+
+---
+
+## 🌍 Open Source Contribution
+
+Contributions are welcome.
+
+Great beginner issues:
+
+* UI enhancements
+* new role templates
+* better NLP extraction
+* roadmap recommendation logic
+* charts and data storytelling
+
+```bash
+# create feature branch
+git checkout -b feature/amazing-improvement
+```
+
+Then open a PR 🚀
+
+---
+
+## ⭐ Support the Project
+
+If this project helps you with:
+
+* career planning
+* internship prep
+* roadmap building
+* resume strategy
+* student placements
+
+please consider giving it a **star ⭐**.
+
+It helps the project reach more students and developers.
+
+---
+
+## 👨‍💻 Author
+
+**Abdul Rafay**
+
+* Full-Stack Developer (MERN)
+* AI / Data Projects
+* Product-focused engineering
+* Open-source builder
+
+If you like career-tech, AI dashboards, and education tools, feel free to connect and contribute.
+
+---
+
+## 📜 License
+
+MIT License — free to use, modify, and distribute.
